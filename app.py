@@ -1,1 +1,4 @@
-print("teste")
+from flask import Flask
+
+
+
