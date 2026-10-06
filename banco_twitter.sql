@@ -3,6 +3,7 @@
 -- BANCO: posts_app
 -- SGBD: MySQL
 -- ============================================================
+SET NAMES utf8mb4;
 
 CREATE DATABASE IF NOT EXISTS posts_app
     CHARACTER SET utf8mb4
@@ -38,9 +39,6 @@ CREATE TABLE posts (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci;
-
-CREATE INDEX idx_posts_usuario_id
-    ON posts (usuario_id);
 
 CREATE INDEX idx_posts_criado_em
     ON posts (criado_em);

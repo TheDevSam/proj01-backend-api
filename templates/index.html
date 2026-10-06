@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Posts dos usuários</title>
+</head>
+<body>
+    <h1>Usuários</h1>
+    <p>Selecione um usuário para ver suas publicações.</p>
+
+    <ul id="usuarios"></ul>
+
+    <section aria-live="polite">
+        <h2 id="titulo">Publicações</h2>
+        <p id="bio"></p>
+        <p id="mensagem">Nenhum usuário selecionado.</p>
+        <div id="posts"></div>
+    </section>
+
+    <script>
+        const listaUsuarios = document.querySelector("#usuarios");
+        const titulo = document.querySelector("#titulo");
+        const bio = document.querySelector("#bio");
+        const mensagem = document.querySelector("#mensagem");
+        const listaPosts = document.querySelector("#posts");
+
+        let selecaoAtual = 0;
+
+        async function consultar(url) {
+            const resposta = await fetch(url);
+
+            if (!resposta.ok) {
+                throw new Error("Não foi possível consultar os dados.");
+            }
+
+            return resposta.json();
+        }
+
+        async function mostrarPerfil(username) {
+            const selecao = ++selecaoAtual;
+
+            titulo.textContent = "Publicações";
+            bio.textContent = "";
+            listaPosts.replaceChildren();
+            mensagem.textContent = "Carregando publicações...";
+
+            try {
+                const dados = await consultar(
+                    `/api/usuarios/${encodeURIComponent(username)}`
+                );
+
+                if (selecao !== selecaoAtual) return;
+
+                titulo.textContent = `${dados.usuario.nome} (@${dados.usuario.username})`;
+                bio.textContent = dados.usuario.bio || "";
+
+                mensagem.textContent = dados.posts.length === 0
+                    ? "Este usuário ainda não publicou."
+                    : "";
+
+                for (const post of dados.posts) {
+                    const artigo = document.createElement("article");
+                    const conteudo = document.createElement("p");
+                    const data = document.createElement("time");
+
+                    conteudo.textContent = post.conteudo;
+                    data.dateTime = post.criado_em;
+                    data.textContent = "Publicado em: " +
+                        new Date(post.criado_em).toLocaleString("pt-BR");
+
+                    artigo.append(conteudo, data, document.createElement("hr"));
+                    listaPosts.append(artigo);
+                }
+            } catch (erro) {
+                if (selecao !== selecaoAtual) return;
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        async function carregarUsuarios() {
+            try {
+                const dados = await consultar("/api/usuarios");
+
+                if (dados.usuarios.length === 0) {
+                    mensagem.textContent = "Nenhum usuário cadastrado.";
+                    return;
+                }
+
+                for (const usuario of dados.usuarios) {
+                    const item = document.createElement("li");
+                    const botao = document.createElement("button");
+
+                    botao.type = "button";
+                    botao.textContent = `${usuario.nome} (@${usuario.username})`;
+                    botao.addEventListener("click", () => {
+                        mostrarPerfil(usuario.username);
+                    });
+
+                    item.append(botao);
+                    listaUsuarios.append(item);
+                }
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        carregarUsuarios();
+    </script>
+</body>
+</html>
