@@ -1,0 +1,4 @@
+$credencialBanco = Get-Credential -Message "Acesso ao MySQL"
+$env:DB_USER = $credencialBanco.UserName
+$env:DB_PASSWORD = $credencialBanco.GetNetworkCredential().Password
+Remove-Variable credencialBanco
