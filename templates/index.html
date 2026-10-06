@@ -9,13 +9,33 @@
     <h1>Usuários</h1>
     <p>Selecione um usuário para ver suas publicações.</p>
 
+    <form id="form-usuarios">
+        <label for="termo-usuario">Buscar por nome ou username:</label>
+        <input id="termo-usuario" type="search">
+        <button type="submit">Buscar usuários</button>
+        <button id="todos-usuarios" type="button">Mostrar todos</button>
+    </form>
+
+    <p id="mensagem-usuarios" aria-live="polite"></p>
+
     <ul id="usuarios"></ul>
+
+    <form id="form-busca">
+        <label for="termo">Buscar conteúdo de todos os usuários:</label>
+        <input id="termo" type="search" required>
+        <button type="submit">Buscar</button>
+    </form>
 
     <section aria-live="polite">
         <h2 id="titulo">Publicações</h2>
         <p id="bio"></p>
         <p id="mensagem">Nenhum usuário selecionado.</p>
         <div id="posts"></div>
+        <nav id="paginacao" aria-label="Páginas da busca" hidden>
+            <button id="anterior" type="button" disabled>Anterior</button>
+            <span id="pagina-atual"></span>
+            <button id="proxima" type="button" disabled>Próxima</button>
+        </nav>
     </section>
 
     <script>
@@ -26,6 +46,14 @@
         const listaPosts = document.querySelector("#posts");
 
         let selecaoAtual = 0;
+
+        const paginacao = document.querySelector("#paginacao");
+        const anterior = document.querySelector("#anterior");
+        const proxima = document.querySelector("#proxima");
+        const indicadorPagina = document.querySelector("#pagina-atual");
+
+        let termoAtual = "";
+        let paginaAtual = 1;
 
         async function consultar(url) {
             const resposta = await fetch(url);
@@ -38,6 +66,7 @@
         }
 
         async function mostrarPerfil(username) {
+            paginacao.hidden = true;
             const selecao = ++selecaoAtual;
 
             titulo.textContent = "Publicações";
@@ -47,7 +76,7 @@
 
             try {
                 const dados = await consultar(
-                    `/api/usuarios/${encodeURIComponent(username)}`
+                `/api/usuarios/${encodeURIComponent(username)}`
                 );
 
                 if (selecao !== selecaoAtual) return;
@@ -56,8 +85,8 @@
                 bio.textContent = dados.usuario.bio || "";
 
                 mensagem.textContent = dados.posts.length === 0
-                    ? "Este usuário ainda não publicou."
-                    : "";
+                ? "Este usuário ainda não publicou."
+                : "";
 
                 for (const post of dados.posts) {
                     const artigo = document.createElement("article");
@@ -67,7 +96,7 @@
                     conteudo.textContent = post.conteudo;
                     data.dateTime = post.criado_em;
                     data.textContent = "Publicado em: " +
-                        new Date(post.criado_em).toLocaleString("pt-BR");
+                    new Date(post.criado_em).toLocaleString("pt-BR");
 
                     artigo.append(conteudo, data, document.createElement("hr"));
                     listaPosts.append(artigo);
@@ -78,14 +107,96 @@
             }
         }
 
-        async function carregarUsuarios() {
-            try {
-                const dados = await consultar("/api/usuarios");
+        async function pesquisarPosts(termo, pagina) {
+            paginacao.hidden = true;
+            anterior.disabled = true;
+            proxima.disabled = true;
 
-                if (dados.usuarios.length === 0) {
-                    mensagem.textContent = "Nenhum usuário cadastrado.";
-                    return;
+            const selecao = ++selecaoAtual;
+
+            titulo.textContent = `Resultados para "${termo}"`;
+            bio.textContent = "";
+            listaPosts.replaceChildren();
+            mensagem.textContent = "Buscando...";
+
+            try {
+                const dados = await consultar(
+                `/api/posts/busca/${encodeURIComponent(termo)}?pagina=${pagina}`
+                );
+
+                if (selecao !== selecaoAtual) return;
+
+                termoAtual = termo;
+                paginaAtual = dados.pagina;
+
+                indicadorPagina.textContent = `Página ${paginaAtual}`;
+                anterior.disabled = !dados.tem_anterior;
+                proxima.disabled = !dados.tem_proxima;
+                paginacao.hidden = false;
+
+                mensagem.textContent = dados.posts.length === 0
+                ? "Nenhuma publicação encontrada."
+                : "";
+
+                for (const post of dados.posts) {
+                    const artigo = document.createElement("article");
+                    const autor = document.createElement("strong");
+                    const conteudo = document.createElement("p");
+                    const data = document.createElement("time");
+
+                    autor.textContent = `${post.nome} (@${post.username})`;
+                    conteudo.textContent = post.conteudo;
+                    data.textContent = "Publicado em: " +
+                    new Date(post.criado_em).toLocaleString("pt-BR");
+
+                    artigo.append(autor, conteudo, data, document.createElement("hr"));
+                    listaPosts.append(artigo);
                 }
+            } catch (erro) {
+                if (selecao !== selecaoAtual) return;
+                mensagem.textContent = erro.message;
+            }
+        };
+
+        document.querySelector("#form-busca").addEventListener("submit", (evento) => {
+            evento.preventDefault();
+
+            const termo = document.querySelector("#termo").value.trim();
+
+            if (termo) {
+                pesquisarPosts(termo, 1);
+            }
+        });
+
+        anterior.addEventListener("click", () => {
+            pesquisarPosts(termoAtual, paginaAtual - 1);
+        });
+
+        proxima.addEventListener("click", () => {
+            pesquisarPosts(termoAtual, paginaAtual + 1);
+        });
+
+        let buscaUsuariosAtual = 0;
+
+        async function carregarUsuarios(termo = "") {
+            const busca = ++buscaUsuariosAtual;
+            const aviso = document.querySelector("#mensagem-usuarios");
+
+            listaUsuarios.replaceChildren();
+            aviso.textContent = "Carregando usuários...";
+
+            const url = termo
+            ? `/api/usuarios/busca/${encodeURIComponent(termo)}`
+            : "/api/usuarios";
+
+            try {
+                const dados = await consultar(url);
+
+                if (busca !== buscaUsuariosAtual) return;
+
+                aviso.textContent = dados.usuarios.length === 0
+                ? "Nenhum usuário encontrado."
+                : "";
 
                 for (const usuario of dados.usuarios) {
                     const item = document.createElement("li");
@@ -93,7 +204,9 @@
 
                     botao.type = "button";
                     botao.textContent = `${usuario.nome} (@${usuario.username})`;
+
                     botao.addEventListener("click", () => {
+                        paginacao.hidden = true;
                         mostrarPerfil(usuario.username);
                     });
 
@@ -101,9 +214,22 @@
                     listaUsuarios.append(item);
                 }
             } catch (erro) {
-                mensagem.textContent = erro.message;
+                if (busca !== buscaUsuariosAtual) return;
+                aviso.textContent = erro.message;
             }
         }
+
+        document.querySelector("#form-usuarios").addEventListener("submit", (evento) => {
+            evento.preventDefault();
+
+            const termo = document.querySelector("#termo-usuario").value.trim();
+            carregarUsuarios(termo);
+        });
+
+        document.querySelector("#todos-usuarios").addEventListener("click", () => {
+            document.querySelector("#termo-usuario").value = "";
+            carregarUsuarios();
+        });
 
         carregarUsuarios();
     </script>

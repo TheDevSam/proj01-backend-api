@@ -54,3 +54,20 @@ def buscar_perfil(username):
         if cursor is not None:
             cursor.close()
         conexao.close()
+
+def buscar_usuarios(termo):
+    conexao = conectar()
+    cursor = None
+
+    try:
+        cursor = conexao.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id, nome, username
+            FROM usuarios
+            WHERE nome LIKE %s OR username LIKE %s
+            ORDER BY nome, id """, (f"%{termo}%", f"%{termo}%"))
+        return cursor.fetchall()
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexao.close()

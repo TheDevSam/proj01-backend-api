@@ -1,5 +1,5 @@
 from flask import Blueprint
-from model.usuario_model import listar_usuarios, buscar_perfil
+from model.usuario_model import listar_usuarios, buscar_perfil, buscar_usuarios
 
 usuarios_bp = Blueprint("usuarios", __name__)
 
@@ -17,3 +17,8 @@ def obter_perfil(username):
         return {"erro": "Usuário não encontrado."}, 404
 
     return perfil
+
+@usuarios_bp.route("/api/usuarios/busca/<string:termo>")
+def pesquisar_usuarios(termo):
+    usuarios = buscar_usuarios(termo)
+    return {"usuarios": usuarios}
