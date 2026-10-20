@@ -2,11 +2,13 @@ from database import conectar
 
 
 def listar_usuarios():
-    conexao = conectar()
+    conexao = None
     cursor = None
 
     try:
+        conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
+
         cursor.execute("""
             SELECT id, nome, username
             FROM usuarios
@@ -16,14 +18,16 @@ def listar_usuarios():
     finally:
         if cursor is not None:
             cursor.close()
-        conexao.close()
+        if conexao is not None:
+            conexao.close()
 
 
 def buscar_perfil(username):
-    conexao = conectar()
+    conexao = None
     cursor = None
 
     try:
+        conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
         cursor.execute("""
@@ -53,21 +57,28 @@ def buscar_perfil(username):
     finally:
         if cursor is not None:
             cursor.close()
-        conexao.close()
+        if conexao is not None:
+            conexao.close()
+
 
 def buscar_usuarios(termo):
-    conexao = conectar()
+    conexao = None
     cursor = None
 
     try:
+        conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
+
         cursor.execute("""
             SELECT id, nome, username
             FROM usuarios
             WHERE nome LIKE %s OR username LIKE %s
-            ORDER BY nome, id """, (f"%{termo}%", f"%{termo}%"))
+            ORDER BY nome, id
+        """, (f"%{termo}%", f"%{termo}%"))
+
         return cursor.fetchall()
     finally:
         if cursor is not None:
             cursor.close()
-        conexao.close()
+        if conexao is not None:
+            conexao.close()
