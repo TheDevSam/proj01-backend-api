@@ -1,4 +1,3 @@
-# database.py
 import os
 import mysql.connector
 from flask import g
