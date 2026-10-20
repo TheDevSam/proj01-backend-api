@@ -18,8 +18,6 @@ def listar_usuarios():
     finally:
         if cursor is not None:
             cursor.close()
-        if conexao is not None:
-            conexao.close()
 
 
 def buscar_perfil(username):
@@ -57,8 +55,6 @@ def buscar_perfil(username):
     finally:
         if cursor is not None:
             cursor.close()
-        if conexao is not None:
-            conexao.close()
 
 
 def buscar_usuarios(termo):
@@ -80,5 +76,3 @@ def buscar_usuarios(termo):
     finally:
         if cursor is not None:
             cursor.close()
-        if conexao is not None:
-            conexao.close()

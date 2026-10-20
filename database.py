@@ -1,7 +1,7 @@
 # database.py
 import os
 import mysql.connector
-from flask import current_app, g
+from flask import g
 
 
 def conectar():

@@ -26,8 +26,6 @@ def listar_posts():
     finally:
         if cursor is not None:
             cursor.close()
-        if conexao is not None:
-            conexao.close()
 
 
 def buscar_posts(termo, limite, offset):
@@ -57,5 +55,3 @@ def buscar_posts(termo, limite, offset):
     finally:
         if cursor is not None:
             cursor.close()
-        if conexao is not None:
-            conexao.close()
